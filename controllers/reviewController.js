@@ -5,7 +5,27 @@ const fs = require("fs");
 const xlsx = require("xlsx");
 const { log } = require("console");
 const util = require("util");
+
 const timeElapsed = Date.now();
+const mongoose = require("mongoose");
+
+const Bad = require("../Model/dictionaryModel");
+const Good = require("../Model/dictionaryGood");
+const Comentario = require("../Model/publicacionesModel");
+
+const DB = process.env.DATABASE.replace("<password>", process.env.PASSWORD);
+
+// mongoose
+//   .connect(DB, {
+//     dbName: "Diccionario",
+//     useNewUrlParser: true,
+//     useCreateIndex: true,
+//     useFindAndModify: false,
+//     useUnifiedTopology: true,
+//   })
+//   .then(() => {
+//     console.log("db connection successful");
+//   });
 
 const multerStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -59,9 +79,82 @@ exports.postReview = async (req, res, next) => {
   next();
 };
 exports.functionTest = async (req, res, next) => {
-  console.log(req.file.path);
-  const data = xlsx.readFile(`${req.file.path}`);
-  console.log(data);
+  try {
+    //console.log(req.file.path);
+    const data = xlsx.readFile(`${req.file.path}`);
+    const dataSheets = data.SheetNames;
+    const sheet = dataSheets[0];
+    let dataExcel = xlsx.utils.sheet_to_json(data.Sheets[sheet]);
+    // const kaka = await Comentario.aggregate([
+    //   { $match: { $text: { $search: "hOLA" } } },
+    //   { $group: { _id: { $meta: "textScore" }, count: { $sum: 1 } } },
+    // ]);
+    //console.log(kaka);
+    // const newData = await Good.find({}).select("palabra -_id").exec();
+    // console.log(newData);
+    // const newkaka = await Comentario.find(
+    //   { $text: { $search: "hola caca" } },
+    //   { score: { $meta: "textScore" }, count: { $sum: 1 } }
+    // );
+    // console.log(...newkaka);
+    //console.log(newData.palabra);
+    //const oldData = await Review.findOne({ buenasPalabras: "bueno" });
+
+    //console.log(newData);
+    //console.log(newData[0].buenasPalabras[0]);
+    //console.log(dataExcel[0]["Fecha de publicacion"]);
+    //console.log(dataExcel[0]);
+    let newMap = dataExcel.map((el) => ({
+      Autor: el["Autor de la publicacion"],
+      Comentario: el.Comentario.split(" "),
+    }));
+    // const newkaka = await Comentario.find(
+    //   { $text: { $search: "hola caca" } },
+    //   { score: { $meta: "textScore" }, count: { $sum: 1 } }
+    // );
+    let compare = newMap.map((el) => {
+      //{ $match: { score: { $gta: 1.0 } }, count: { $sum: 1 } }
+      el.Comentario.forEach(async (element) => {
+        // const newData = await Good.aggregate([
+        //   { $match: { $text: { $search: element } } },
+        //   { $project: { title: 1, _id: 0, score: { $meta: "textScore" } } },
+        //   { $match: { score: { $gt: 1.0 } } },
+        // ]);
+        // if (newData !== [{}]) {
+        //   console.log(newData);
+        // }
+        // if (newData) {
+        //   console.log(el.Autor, newData);
+        // }
+        const goodData = await Good.findOne({ palabra: element }).select(
+          "palabra -_id"
+        );
+
+        if (goodData) {
+          //console.log(el.Autor, badData);
+          const goodStuff = {
+            autor: el.Autor,
+            buenaPalabra: goodData.palabra,
+          };
+          console.log(goodStuff);
+        }
+        const badData = await Bad.findOne({ palabra: element }).select(
+          "palabra -_id"
+        );
+
+        if (badData) {
+          //console.log(el.Autor, badData);
+          const badStuff = {
+            autor: el.Autor,
+            malaPalabra: badData.palabra,
+          };
+          console.log(badStuff);
+        }
+      });
+    });
+  } catch (err) {
+    console.log(err);
+  }
 };
 exports.getReviews = async (req, res, next) => {
   try {

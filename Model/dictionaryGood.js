@@ -10,7 +10,15 @@ const dictionarySchema = new mongoose.Schema({
 //const readGood = fs.readFileSync(`../data/palabras-positivas.txt`, "latin1");
 
 //const final = String(readGood.replace(/(\r\n|\n|\r)/gm, ",")).split(",");
-dictionarySchema.index({ palabra: "text" });
-const Bad = mongoose.model("Bad", dictionarySchema);
+dictionarySchema.index(
+  { palabra: "text" },
+  {
+    weights: {
+      content: 1,
+      keywords: 1,
+    },
+  }
+);
+const Good = mongoose.model("Good", dictionarySchema);
 
-module.exports = Bad;
+module.exports = Good;
